@@ -40,5 +40,6 @@ A high-performance, mobile-first CRM and client outreach application built for s
 
 ## 🚀 Live Demo
 
-- **Vercel URL:** [Deploying Live]
-- **Developer:** Zargham Mustafa
+- **Live CRM Web App:** [https://find-nu-one.vercel.app](https://find-nu-one.vercel.app)
+- **Direct PDF Report:** [https://find-nu-one.vercel.app/leads_report.pdf](https://find-nu-one.vercel.app/leads_report.pdf)
+- **Developer:** Zargham Mustafa (`@ZarghamMustafa2`)
