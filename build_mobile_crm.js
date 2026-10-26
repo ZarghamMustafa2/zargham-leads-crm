@@ -649,21 +649,49 @@ const htmlTemplate = `<!DOCTYPE html>
     }
 
     .status-btn.active-unsent {
-      background: #fef08a;
-      color: #854d0e;
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #f59e0b;
       box-shadow: 0 1px 2px rgba(0,0,0,0.08);
     }
 
     .status-btn.active-sent {
-      background: #bbf7d0;
-      color: #14532d;
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #10b981;
       box-shadow: 0 1px 2px rgba(0,0,0,0.08);
     }
 
     .status-btn.active-replied {
-      background: #c7d2fe;
-      color: #312e81;
+      background: #e0e7ff;
+      color: #3730a3;
+      border: 1px solid #6366f1;
       box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+
+    .status-indicator-badge {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .status-indicator-badge.badge-sent {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+    .status-indicator-badge.badge-unsent {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+    .status-indicator-badge.badge-replied {
+      background: #e0e7ff;
+      color: #4338ca;
+      border: 1px solid #c7d2fe;
     }
 
     /* Floating Back to Top Button */
@@ -883,6 +911,7 @@ const htmlTemplate = `<!DOCTYPE html>
       <option value="الخبر">الخبر</option>
       <option value="الطائف">الطائف</option>
       <option value="مكة المكرمة">مكة المكرمة</option>
+      <option value="أبها">أبها</option>
     </select>
   </section>
 
@@ -922,6 +951,7 @@ const htmlTemplate = `<!DOCTYPE html>
             <option value="الخبر">الخبر</option>
             <option value="الطائف">الطائف</option>
             <option value="مكة المكرمة">مكة المكرمة</option>
+            <option value="أبها">أبها</option>
             <option value="أخرى">أخرى</option>
           </select>
         </div>
@@ -941,6 +971,16 @@ const htmlTemplate = `<!DOCTYPE html>
 
   <script>
     const initialLeads = LEADS_PLACEHOLDER;
+
+    function formatWaNumber(phone) {
+      let clean = (phone || '').replace(/\D/g, '');
+      if (clean.startsWith('05')) {
+        clean = '966' + clean.slice(1);
+      } else if (clean.startsWith('5') && clean.length === 9) {
+        clean = '966' + clean;
+      }
+      return clean;
+    }
 
     const STORAGE_KEY = 'zargham_leads_v4';
     const LANG_STORAGE_KEY = 'zargham_crm_lang';
@@ -971,6 +1011,7 @@ const htmlTemplate = `<!DOCTYPE html>
           "الخبر": "الخبر",
           "الطائف": "الطائف",
           "مكة المكرمة": "مكة المكرمة",
+          "أبها": "أبها",
           "أخرى": "أخرى"
         },
         sendWa: "💬 واتساب ومارك تم الإرسال",
@@ -1013,6 +1054,7 @@ const htmlTemplate = `<!DOCTYPE html>
           "الخبر": "Al Khobar",
           "الطائف": "Taif",
           "مكة المكرمة": "Makkah",
+          "أبها": "Abha",
           "أخرى": "Other"
         },
         sendWa: "💬 WhatsApp & Mark Sent",
@@ -1041,63 +1083,83 @@ const htmlTemplate = `<!DOCTYPE html>
     };
 
     function init() {
-      const savedLang = localStorage.getItem(LANG_STORAGE_KEY);
-      if (savedLang === 'en' || savedLang === 'ar') {
-        currentLang = savedLang;
-      }
-
-      // CRITICAL: Preserve all 66 sent statuses that the user set on their phone!
-      const existingStored = localStorage.getItem('zargham_leads_v4') || 
-                             localStorage.getItem('zargham_leads_v3') || 
-                             localStorage.getItem('zargham_leads_v2') || 
-                             localStorage.getItem('zargham_leads');
-
-      if (existingStored) {
-        try {
-          const parsed = JSON.parse(existingStored);
-          const userStatusMap = new Map();
-          parsed.forEach(l => {
-            if (l.phone) {
-              userStatusMap.set(formatWaNumber(l.phone), l.status);
-            }
-          });
-
-          // Build master list preserving user statuses
-          leadsData = initialLeads.map(initLead => {
-            const ph = formatWaNumber(initLead.phone);
-            const userStatus = userStatusMap.get(ph);
-            return {
-              ...initLead,
-              status: userStatus || initLead.status || 'unsent'
-            };
-          });
-
-          // Keep user-created custom leads
-          parsed.filter(l => l.is_user_added).forEach(uLead => {
-            if (!leadsData.some(l => formatWaNumber(l.phone) === formatWaNumber(uLead.phone))) {
-              leadsData.unshift(uLead);
-            }
-          });
-
-          saveToStorage();
-        } catch(e) {
-          leadsData = [...initialLeads];
-          saveToStorage();
+      // 1. Language preference
+      try {
+        const savedLang = localStorage.getItem(LANG_STORAGE_KEY);
+        if (savedLang === 'en' || savedLang === 'ar') {
+          currentLang = savedLang;
         }
-      } else {
-        leadsData = [...initialLeads];
-        saveToStorage();
-      }
+      } catch (e) {}
+
+      // 2. Multi-Version Deep Recovery:
+      // Loop over all storage versions ('zargham_leads_v4', 'v3', 'v2', 'zargham_leads')
+      // If a lead was marked 'sent' or 'replied' in ANY version, NEVER revert it to 'unsent'!
+      const userStatusMap = new Map();
+      const allStorageKeys = ['zargham_leads_v4', 'zargham_leads_v3', 'zargham_leads_v2', 'zargham_leads'];
+
+      allStorageKeys.forEach(key => {
+        try {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(l => {
+                if (l && l.phone && (l.status === 'sent' || l.status === 'replied')) {
+                  const ph = formatWaNumber(l.phone);
+                  if (!userStatusMap.has(ph) || l.status === 'replied') {
+                    userStatusMap.set(ph, l.status);
+                  }
+                }
+              });
+            }
+          }
+        } catch (err) {
+          console.warn('Error reading key', key, err);
+        }
+      });
+
+      // 3. Build canonical leads list (merging initialLeads with recovered user statuses)
+      leadsData = initialLeads.map(initLead => {
+        const ph = formatWaNumber(initLead.phone);
+        const recoveredStatus = userStatusMap.get(ph);
+        return {
+          ...initLead,
+          status: recoveredStatus || initLead.status || 'unsent'
+        };
+      });
+
+      // 4. Restore any user-created custom leads
+      allStorageKeys.forEach(key => {
+        try {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              parsed.filter(l => l && l.is_user_added).forEach(uLead => {
+                const uPh = formatWaNumber(uLead.phone);
+                if (!leadsData.some(l => formatWaNumber(l.phone) === uPh)) {
+                  leadsData.unshift(uLead);
+                }
+              });
+            }
+          }
+        } catch (e) {}
+      });
+
+      // 5. Persist unified recovered data into zargham_leads_v4
+      saveToStorage();
 
       applyLanguage();
       render();
 
       window.addEventListener('scroll', () => {
         const btn = document.getElementById('btn-fab-top');
-        if (window.scrollY > 300) {
-          btn.style.display = 'flex';
-        } else {
-          btn.style.display = 'none';
+        if (btn) {
+          if (window.scrollY > 300) {
+            btn.style.display = 'flex';
+          } else {
+            btn.style.display = 'none';
+          }
         }
       });
     }
@@ -1232,17 +1294,13 @@ const htmlTemplate = `<!DOCTYPE html>
 
     // Fast Action: Open WhatsApp AND Automatically Mark as Sent!
     function handleWhatsAppClick(leadId, waUrl, event) {
-      // Mark as sent immediately
       const lead = leadsData.find(l => l.id === leadId);
-      if (lead && lead.status !== 'sent') {
+      if (lead) {
         lead.status = 'sent';
         saveToStorage();
         updateStats();
-        // Give brief timeout before re-rendering so link opens smoothly
-        setTimeout(() => {
-          render();
-          showToast(i18n[currentLang].toastSent);
-        }, 300);
+        render();
+        showToast(i18n[currentLang].toastSent);
       }
     }
 
@@ -1407,7 +1465,10 @@ const htmlTemplate = `<!DOCTYPE html>
           html += '    <div class="biz-name-sub">' + lead.english_name + '</div>';
         }
         html += '    </div>';
-        html += '    <span class="rank-pill">#' + (idx + 1) + '</span>';
+        html += '    <div style="display:flex; align-items:center; gap:6px;">';
+        html += '      <span class="status-indicator-badge badge-' + lead.status + '">' + (isSent ? '✅ ' + t.statusSent : (isReplied ? '💬 ' + t.statusReplied : '⏳ ' + t.statusUnsent)) + '</span>';
+        html += '      <span class="rank-pill">#' + (idx + 1) + '</span>';
+        html += '    </div>';
         html += '  </div>';
 
         // Meta tags
