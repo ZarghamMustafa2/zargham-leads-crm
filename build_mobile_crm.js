@@ -32,7 +32,7 @@ db.keywords.forEach((kwGroup) => {
       category: kwGroup.keyword,
       license: lead.license || lead.category || 'مرخص',
       maps_url: lead.maps_url,
-      status: 'unsent',
+      status: lead.status || 'unsent',
       created_at: Date.now() - (1000 - leadId) * 60000
     });
   });
@@ -818,7 +818,7 @@ const htmlTemplate = `<!DOCTYPE html>
   <script>
     const initialLeads = LEADS_PLACEHOLDER;
 
-    const STORAGE_KEY = 'zargham_leads_v2';
+    const STORAGE_KEY = 'zargham_leads_v3';
     const LANG_STORAGE_KEY = 'zargham_crm_lang';
 
     let leadsData = [];
@@ -938,18 +938,36 @@ const htmlTemplate = `<!DOCTYPE html>
           const newLeads = initialLeads.filter(l => !existingPhones.has(formatWaNumber(l.phone || '')));
           if (newLeads.length > 0) {
             leadsData = [...newLeads, ...parsed];
-            saveToStorage();
           } else {
             leadsData = parsed;
           }
         } catch(e) {
           leadsData = [...initialLeads];
-          saveToStorage();
         }
       } else {
-        leadsData = [...initialLeads];
-        saveToStorage();
+        // Also check if v2 had user added leads to migrate
+        const oldV2 = localStorage.getItem('zargham_leads_v2');
+        if (oldV2) {
+          try {
+            const parsedOld = JSON.parse(oldV2);
+            const userAdded = parsedOld.filter(l => l.is_user_added);
+            leadsData = [...userAdded, ...initialLeads];
+          } catch(e) {
+            leadsData = [...initialLeads];
+          }
+        } else {
+          leadsData = [...initialLeads];
+        }
       }
+
+      // Sync pre-marked sent leads from initial database
+      const sentInitialPhones = new Set(initialLeads.filter(l => l.status === 'sent').map(l => formatWaNumber(l.phone || '')));
+      leadsData.forEach(l => {
+        if (sentInitialPhones.has(formatWaNumber(l.phone || ''))) {
+          l.status = 'sent';
+        }
+      });
+      saveToStorage();
 
       applyLanguage();
       render();
@@ -1131,7 +1149,7 @@ const htmlTemplate = `<!DOCTYPE html>
         category: 'مضاف يدوياً',
         license: 'جديد',
         maps_url: 'https://www.google.com/maps/search/' + encodeURIComponent(name + ' ' + city),
-        status: 'unsent',
+        status: lead.status || 'unsent',
         created_at: Date.now(),
         is_user_added: true
       };
