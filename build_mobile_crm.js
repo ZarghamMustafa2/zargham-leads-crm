@@ -3,7 +3,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 function formatWaNumber(phone) {
-  let clean = phone.replace(/\D/g, '');
+  let clean = (phone || '').replace(/\D/g, '');
   if (clean.startsWith('05')) {
     clean = '966' + clean.slice(1);
   } else if (clean.startsWith('5') && clean.length === 9) {
@@ -44,528 +44,657 @@ const htmlTemplate = `<!DOCTYPE html>
 <html lang="ar" dir="rtl" id="html-root">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Zargham Leads CRM - Real Estate Outreach</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Zargham CRM - Saudi Real Estate Outreach</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
     :root {
       --primary: #2563eb;
       --primary-dark: #1d4ed8;
-      --whatsapp: #25d366;
-      --whatsapp-dark: #128c7e;
-      --bg: #f8fafc;
+      --whatsapp: #22c55e;
+      --whatsapp-dark: #16a34a;
+      --bg: #f1f5f9;
       --card-bg: #ffffff;
       --text-main: #0f172a;
       --text-muted: #64748b;
       --border: #e2e8f0;
-      --sent-bg: #dcfce7;
-      --sent-text: #166534;
-      --unsent-bg: #fef3c7;
-      --unsent-text: #92400e;
-      --replied-bg: #e0e7ff;
-      --replied-text: #3730a3;
+      --border-dark: #cbd5e1;
+      --sent-bg: #ecfdf5;
+      --sent-border: #10b981;
+      --unsent-border: #f59e0b;
+      --replied-border: #6366f1;
     }
 
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
+      margin: 0;
+      padding: 0;
     }
 
     body {
       font-family: 'Cairo', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: var(--bg);
       color: var(--text-main);
-      margin: 0;
-      padding: 0 0 90px 0;
-      transition: all 0.2s ease;
+      padding: 0 0 85px 0;
+      -webkit-font-smoothing: antialiased;
     }
 
     html[dir="ltr"] body {
       font-family: 'Inter', 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    /* Top Sticky App Bar */
+    /* Fixed Top App Bar */
     .app-header {
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      background: linear-gradient(135deg, #090d16 0%, #172554 100%);
       color: white;
-      padding: 14px 16px 12px 16px;
+      padding: 10px 14px 8px 14px;
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
     }
 
     .header-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-      gap: 8px;
+      gap: 6px;
+      margin-bottom: 8px;
     }
 
-    .brand-title {
-      font-size: 17px;
-      font-weight: 800;
+    .brand-group {
       display: flex;
       align-items: center;
       gap: 6px;
-      white-space: nowrap;
+      min-width: 0;
     }
 
-    .brand-tag {
-      background: rgba(59, 130, 246, 0.3);
-      color: #93c5fd;
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 10px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
+    .brand-icon {
+      font-size: 18px;
+      line-height: 1;
     }
 
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* Bilingual Switcher */
-    .lang-switcher {
-      display: inline-flex;
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 20px;
-      padding: 2px;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-    }
-
-    .lang-btn {
-      background: transparent;
-      border: none;
-      color: #e2e8f0;
-      padding: 4px 9px;
-      border-radius: 16px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-    }
-
-    .lang-btn.active {
-      background: white;
-      color: #1e3a8a;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
-    }
-
-    .add-lead-btn {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-      font-family: inherit;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      white-space: nowrap;
-    }
-
-    .add-lead-btn:active {
-      transform: scale(0.97);
-    }
-
-    /* Live Analytics / Counter Cards */
-    .counters-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .counter-card {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 10px;
-      padding: 8px 4px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      user-select: none;
-    }
-
-    .counter-card.active {
-      background: rgba(255, 255, 255, 0.25);
-      border-color: #60a5fa;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    .counter-card .num {
-      font-size: 20px;
+    .brand-title {
+      font-size: 15px;
       font-weight: 800;
-      line-height: 1.1;
-      font-family: 'Inter', sans-serif;
-    }
-
-    .counter-card .label {
-      font-size: 10px;
-      color: #cbd5e1;
-      margin-top: 2px;
-      font-weight: 600;
+      letter-spacing: -0.2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .num-total { color: #ffffff; }
-    .num-unsent { color: #fde047; }
-    .num-sent { color: #4ade80; }
-    .num-replied { color: #a5b4fc; }
-
-    /* Outreach Progress Bar */
-    .progress-wrap {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 4px;
-      height: 4px;
-      overflow: hidden;
-      margin-top: 4px;
+    .brand-badge {
+      background: rgba(59, 130, 246, 0.35);
+      color: #93c5fd;
+      font-size: 9.5px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 700;
     }
 
-    .progress-bar {
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    /* Compact Language Switcher */
+    .lang-toggle {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 18px;
+      padding: 2px;
+    }
+
+    .lang-opt {
+      background: transparent;
+      border: none;
+      color: #cbd5e1;
+      padding: 3px 8px;
+      border-radius: 14px;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .lang-opt.active {
+      background: white;
+      color: #0f172a;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    }
+
+    .btn-add-mini {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 2px 5px rgba(37, 99, 235, 0.35);
+      white-space: nowrap;
+    }
+
+    .btn-add-mini:active {
+      transform: scale(0.96);
+    }
+
+    /* Streamlined Interactive Stat Chips */
+    .stat-chips-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+      margin-bottom: 6px;
+    }
+
+    .stat-chips-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .stat-chip {
+      flex: 1;
+      min-width: 74px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 5px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .stat-chip:active {
+      transform: scale(0.97);
+    }
+
+    .stat-chip.active {
+      background: rgba(255, 255, 255, 0.22);
+      border-color: #60a5fa;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+
+    .stat-chip .val {
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.1;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .stat-chip .lbl {
+      font-size: 9px;
+      color: #94a3b8;
+      font-weight: 700;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    .chip-unsent .val { color: #fde047; }
+    .chip-sent .val { color: #4ade80; }
+    .chip-replied .val { color: #a5b4fc; }
+    .chip-all .val { color: #ffffff; }
+
+    /* Micro Progress Bar */
+    .progress-track {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 3px;
+      height: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
       background: linear-gradient(90deg, #fde047 0%, #4ade80 100%);
       height: 100%;
       width: 0%;
       transition: width 0.3s ease;
     }
 
-    /* Sticky Search & Quick Filter Bar */
+    /* Compact Sticky Controls Bar */
     .controls-bar {
       background: white;
-      padding: 12px 16px;
+      padding: 8px 12px;
       position: sticky;
-      top: 114px;
+      top: 96px;
       z-index: 90;
       border-bottom: 1px solid var(--border);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      display: flex;
+      gap: 6px;
+      align-items: center;
     }
 
-    .search-box {
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+    }
+
+    .search-input {
       width: 100%;
-      padding: 10px 14px;
+      padding: 8px 10px;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 14px;
+      border-radius: 8px;
+      font-size: 13px;
       outline: none;
       font-family: inherit;
       background: #f8fafc;
-      transition: border-color 0.2s;
-      margin-bottom: 8px;
+      transition: all 0.15s;
     }
 
-    .search-box:focus {
+    html[dir="rtl"] .search-input { padding-left: 28px; }
+    html[dir="ltr"] .search-input { padding-right: 28px; }
+
+    .search-input:focus {
       border-color: var(--primary);
       background: white;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
     }
 
-    .filter-pills {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      scrollbar-width: none;
-    }
-
-    .filter-pills::-webkit-scrollbar {
+    .btn-clear-search {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #e2e8f0;
+      border: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      font-size: 10px;
+      color: #64748b;
+      cursor: pointer;
       display: none;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
     }
 
-    .pill-btn {
+    html[dir="rtl"] .btn-clear-search { left: 7px; }
+    html[dir="ltr"] .btn-clear-search { right: 7px; }
+
+    .city-select {
+      background: #f8fafc;
       border: 1px solid var(--border);
-      background: white;
-      color: var(--text-muted);
-      padding: 6px 12px;
-      border-radius: 20px;
+      border-radius: 8px;
+      padding: 8px 6px;
       font-size: 12px;
       font-weight: 700;
-      white-space: nowrap;
-      cursor: pointer;
+      color: #334155;
       font-family: inherit;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 4px;
+      outline: none;
+      max-width: 120px;
+      cursor: pointer;
     }
 
-    .pill-btn.active {
-      background: #1e3a8a;
-      color: white;
-      border-color: #1e3a8a;
-    }
-
-    /* Leads Feed Container */
+    /* Leads Feed */
     .leads-container {
-      padding: 14px 14px 20px 14px;
-      max-width: 600px;
+      padding: 10px 10px 30px 10px;
+      max-width: 580px;
       margin: 0 auto;
     }
 
-    /* Lead Card */
+    /* Compact, High-Density Lead Card */
     .lead-card {
       background: var(--card-bg);
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 14px;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
       border: 1px solid var(--border);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
       position: relative;
+      transition: all 0.2s ease;
     }
 
     .lead-card.status-sent {
-      border-left: 4px solid #16a34a;
+      border-left: 4px solid var(--sent-border);
       background: #fafdfb;
     }
 
     html[dir="rtl"] .lead-card.status-sent {
       border-left: 1px solid var(--border);
-      border-right: 4px solid #16a34a;
+      border-right: 4px solid var(--sent-border);
     }
 
     .lead-card.status-unsent {
-      border-left: 4px solid #eab308;
+      border-left: 4px solid var(--unsent-border);
     }
 
     html[dir="rtl"] .lead-card.status-unsent {
       border-left: 1px solid var(--border);
-      border-right: 4px solid #eab308;
+      border-right: 4px solid var(--unsent-border);
     }
 
     .lead-card.status-replied {
-      border-left: 4px solid #6366f1;
+      border-left: 4px solid var(--replied-border);
       background: #fafaff;
     }
 
     html[dir="rtl"] .lead-card.status-replied {
       border-left: 1px solid var(--border);
-      border-right: 4px solid #6366f1;
+      border-right: 4px solid var(--replied-border);
     }
 
-    .card-top {
+    /* Card Top Header */
+    .card-head {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 6px;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .head-main {
+      min-width: 0;
+      flex: 1;
     }
 
     .biz-name {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
-      color: var(--text-main);
-      margin: 0 0 2px 0;
+      color: #0f172a;
+      line-height: 1.25;
+      margin-bottom: 2px;
+    }
+
+    .biz-name-sub {
+      font-size: 11px;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .rank-pill {
+      font-size: 11px;
+      font-weight: 800;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Metadata Chips */
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .badge-chip {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+
+    .chip-city { background: #e0f2fe; color: #0284c7; }
+    .chip-lic { background: #f1f5f9; color: #475569; }
+    .chip-new { background: #fef08a; color: #854d0e; }
+
+    .address-text {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
       line-height: 1.3;
     }
 
-    .biz-meta-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-
-    .tag-badge {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-weight: 700;
-    }
-
-    .tag-city { background: #e0f2fe; color: #0369a1; }
-    .tag-license { background: #f1f5f9; color: #475569; }
-    .tag-new { background: #fef08a; color: #854d0e; }
-
-    .biz-address {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    /* Big Action Buttons */
-    .action-buttons {
+    /* Main Fast Action Bar (Thumb Zone) */
+    .fast-action-bar {
       display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      margin-bottom: 12px;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 6px;
+      margin-bottom: 8px;
+      align-items: center;
     }
 
-    .btn-wa-action {
-      background: linear-gradient(135deg, #25d366 0%, #16a34a 100%);
+    .btn-wa-main {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
       color: white;
       text-decoration: none;
-      font-size: 14px;
-      font-weight: 700;
-      padding: 12px 14px;
-      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 800;
+      padding: 10px 12px;
+      border-radius: 9px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      box-shadow: 0 3px 6px rgba(37, 211, 102, 0.25);
+      gap: 6px;
+      box-shadow: 0 2px 5px rgba(34, 197, 94, 0.3);
+      white-space: nowrap;
     }
 
-    .btn-wa-action:active {
-      transform: scale(0.98);
+    .btn-wa-main:active {
+      transform: scale(0.97);
       filter: brightness(0.95);
     }
 
-    .btn-map-action {
-      background: #f1f5f9;
+    .btn-icon-action {
+      background: #f8fafc;
       border: 1px solid var(--border);
-      color: #3b82f6;
+      color: #334155;
       text-decoration: none;
-      padding: 12px 14px;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 700;
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.15s;
     }
 
-    /* Message Accordion */
-    .message-container {
+    .btn-icon-action:active {
+      background: #e2e8f0;
+      transform: scale(0.94);
+    }
+
+    .btn-drawer-toggle {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      color: #2563eb;
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-drawer-toggle.expanded {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+
+    /* Collapsible Pitch Drawer (Saves 60% Screen Space!) */
+    .pitch-drawer {
+      display: none;
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 10px 12px;
-      margin-bottom: 12px;
-      position: relative;
+      border-radius: 9px;
+      padding: 10px;
+      margin-bottom: 8px;
+      animation: fadeIn 0.15s ease-out;
     }
 
-    .message-header {
+    .pitch-drawer.open {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .pitch-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-muted);
+      margin-bottom: 6px;
+      gap: 6px;
     }
 
-    .msg-pills {
+    .pitch-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+    }
+
+    .pitch-switch {
       display: inline-flex;
       background: #e2e8f0;
-      border-radius: 14px;
+      border-radius: 12px;
       padding: 2px;
       gap: 2px;
     }
 
-    .btn-msg-lang {
+    .pitch-switch-btn {
       border: none;
       background: transparent;
       font-size: 10px;
       font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 12px;
+      padding: 2px 6px;
+      border-radius: 10px;
       cursor: pointer;
       color: #64748b;
       font-family: inherit;
-      transition: all 0.2s;
     }
 
-    .btn-msg-lang.active {
+    .pitch-switch-btn.active {
       background: #2563eb;
       color: white;
     }
 
-    .btn-copy {
+    .btn-copy-mini {
       background: #e2e8f0;
       border: none;
-      padding: 3px 9px;
-      border-radius: 4px;
+      padding: 3px 8px;
+      border-radius: 5px;
       font-size: 11px;
       font-weight: 700;
       cursor: pointer;
       font-family: inherit;
+      color: #334155;
     }
 
-    .message-text {
-      font-size: 12px;
-      line-height: 1.55;
+    .pitch-text-box {
+      font-size: 11.5px;
+      line-height: 1.5;
       color: #334155;
       white-space: pre-line;
+      background: white;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
     }
 
-    .message-text.lang-ar {
+    .pitch-text-box.lang-ar {
       direction: rtl;
       text-align: right;
       font-family: 'Cairo', sans-serif;
     }
 
-    .message-text.lang-en {
+    .pitch-text-box.lang-en {
       direction: ltr;
       text-align: left;
       font-family: 'Inter', sans-serif;
     }
 
-    /* Status Selector (Thumb-Friendly Tap Buttons) */
-    .status-selector {
+    /* Fast Status Selector */
+    .status-bar {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
+      gap: 4px;
       background: #f1f5f9;
-      padding: 4px;
+      padding: 3px;
       border-radius: 8px;
     }
 
-    .status-tab {
+    .status-btn {
       border: none;
       background: transparent;
-      padding: 8px 4px;
+      padding: 6px 2px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
       font-family: inherit;
-      color: var(--text-muted);
-      transition: all 0.2s;
+      color: #64748b;
+      transition: all 0.15s;
       white-space: nowrap;
     }
 
-    .status-tab.active-unsent {
+    .status-btn.active-unsent {
       background: #fef08a;
       color: #854d0e;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
     }
 
-    .status-tab.active-sent {
+    .status-btn.active-sent {
       background: #bbf7d0;
       color: #14532d;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
     }
 
-    .status-tab.active-replied {
+    .status-btn.active-replied {
       background: #c7d2fe;
       color: #312e81;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
     }
 
-    /* Modal for Adding New Lead */
+    /* Floating Back to Top Button */
+    .btn-fab-top {
+      position: fixed;
+      bottom: 20px;
+      right: 18px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #0f172a;
+      color: white;
+      border: none;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 150;
+      transition: transform 0.15s;
+    }
+
+    .btn-fab-top:active {
+      transform: scale(0.92);
+    }
+
+    /* Modal Form */
     .modal-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
       background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(4px);
       z-index: 200;
@@ -574,14 +703,14 @@ const htmlTemplate = `<!DOCTYPE html>
       justify-content: center;
     }
 
-    .modal-content {
+    .modal-card {
       background: white;
       width: 100%;
       max-width: 500px;
       border-radius: 20px 20px 0 0;
-      padding: 22px 20px 30px 20px;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
-      animation: slideUp 0.25s ease-out;
+      padding: 20px 18px 28px 18px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
+      animation: slideUp 0.2s ease-out;
     }
 
     @keyframes slideUp {
@@ -589,24 +718,23 @@ const htmlTemplate = `<!DOCTYPE html>
       to { transform: translateY(0); }
     }
 
-    .modal-header {
+    .modal-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
 
-    .modal-title {
-      font-size: 18px;
+    .modal-head h3 {
+      font-size: 16px;
       font-weight: 800;
-      margin: 0;
     }
 
-    .modal-close {
+    .modal-close-btn {
       background: #f1f5f9;
       border: none;
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       font-size: 16px;
       cursor: pointer;
@@ -614,28 +742,28 @@ const htmlTemplate = `<!DOCTYPE html>
     }
 
     .form-group {
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
-    .form-label {
+    .form-group label {
       display: block;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
-      color: var(--text-muted);
-      margin-bottom: 5px;
+      color: #64748b;
+      margin-bottom: 4px;
     }
 
-    .form-input {
+    .form-ctrl {
       width: 100%;
-      padding: 12px 14px;
+      padding: 10px 12px;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 14px;
+      border-radius: 8px;
+      font-size: 13.5px;
       font-family: inherit;
       outline: none;
     }
 
-    .form-input:focus {
+    .form-ctrl:focus {
       border-color: var(--primary);
     }
 
@@ -644,154 +772,150 @@ const htmlTemplate = `<!DOCTYPE html>
       background: #2563eb;
       color: white;
       border: none;
-      padding: 14px;
-      border-radius: 10px;
-      font-size: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
       font-weight: 800;
       cursor: pointer;
-      margin-top: 8px;
+      margin-top: 6px;
       font-family: inherit;
     }
 
-    .btn-submit-lead:active {
-      background: #1d4ed8;
-    }
-
-    /* Toast Notification */
-    .toast {
+    /* Toast */
+    .toast-pill {
       position: fixed;
-      bottom: 24px;
+      bottom: 22px;
       left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background: #0f172a;
+      transform: translateX(-50%) translateY(120px);
+      background: #090d16;
       color: white;
-      padding: 10px 20px;
-      border-radius: 25px;
-      font-size: 13px;
+      padding: 9px 18px;
+      border-radius: 22px;
+      font-size: 12.5px;
       font-weight: 700;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
       z-index: 300;
       opacity: 0;
-      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       pointer-events: none;
+      white-space: nowrap;
     }
 
-    .toast.show {
+    .toast-pill.show {
       transform: translateX(-50%) translateY(0);
       opacity: 1;
     }
 
     .empty-state {
       text-align: center;
-      padding: 50px 20px;
+      padding: 40px 14px;
       color: var(--text-muted);
     }
 
     @media print {
-      .app-header, .controls-bar, .action-buttons, .status-selector, .modal-overlay, .btn-copy, .msg-pills, .lang-switcher {
+      .app-header, .controls-bar, .fast-action-bar, .status-bar, .modal-overlay, .btn-fab-top {
         display: none !important;
       }
       body { padding: 0 !important; background: white !important; }
-      .lead-card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; margin-bottom: 20px; }
+      .lead-card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; margin-bottom: 16px; }
+      .pitch-drawer { display: block !important; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Sticky Top App Bar -->
+  <!-- Sticky Compact Top Bar -->
   <header class="app-header">
     <div class="header-top">
-      <div class="brand-title">
-        <span id="ui-brand">⚡ ضرغام CRM</span>
-        <span class="brand-tag" id="ui-brand-tag">Outreach Kit</span>
+      <div class="brand-group">
+        <span class="brand-icon">⚡</span>
+        <span class="brand-title" id="ui-brand">Zargham CRM</span>
+        <span class="brand-badge" id="ui-brand-tag">Outreach</span>
       </div>
-      <div class="header-actions">
-        <!-- Bilingual Switcher -->
-        <div class="lang-switcher">
-          <button type="button" class="lang-btn active" id="lang-btn-ar" onclick="setLanguage('ar')">🇸🇦 ع</button>
-          <button type="button" class="lang-btn" id="lang-btn-en" onclick="setLanguage('en')">🇬🇧 EN</button>
+      <div class="header-controls">
+        <div class="lang-toggle">
+          <button type="button" class="lang-opt active" id="lang-btn-ar" onclick="setLanguage('ar')">🇸🇦 ع</button>
+          <button type="button" class="lang-opt" id="lang-btn-en" onclick="setLanguage('en')">🇬🇧 EN</button>
         </div>
-        <button class="add-lead-btn" onclick="openAddModal()">
-          <span id="ui-add-lead">➕ إضافة ليد</span>
+        <button class="btn-add-mini" onclick="openAddModal()">
+          <span id="ui-add-lead">➕ إضافة</span>
         </button>
       </div>
     </div>
 
-    <!-- Live Counter Grid -->
-    <div class="counters-grid">
-      <div class="counter-card" id="card-all" onclick="setFilter('all')">
-        <div class="num num-total" id="stat-total">0</div>
-        <div class="label" id="lbl-total">إجمالي الليڈز</div>
+    <!-- 1-Row Fast Metric & Filter Chips -->
+    <div class="stat-chips-row">
+      <div class="stat-chip chip-unsent active" id="card-unsent" onclick="setFilter('unsent')">
+        <div class="val" id="stat-unsent">0</div>
+        <div class="lbl" id="lbl-unsent">⚡ للمراسلة</div>
       </div>
-      <div class="counter-card active" id="card-unsent" onclick="setFilter('unsent')">
-        <div class="num num-unsent" id="stat-unsent">0</div>
-        <div class="label" id="lbl-unsent">لم يُرسل (المتبقي)</div>
+      <div class="stat-chip chip-sent" id="card-sent" onclick="setFilter('sent')">
+        <div class="val" id="stat-sent">0</div>
+        <div class="lbl" id="lbl-sent">✅ تم الإرسال</div>
       </div>
-      <div class="counter-card" id="card-sent" onclick="setFilter('sent')">
-        <div class="num num-sent" id="stat-sent">0</div>
-        <div class="label" id="lbl-sent">تم الإرسال</div>
+      <div class="stat-chip chip-replied" id="card-replied" onclick="setFilter('replied')">
+        <div class="val" id="stat-replied">0</div>
+        <div class="lbl" id="lbl-replied">💬 تم الرد</div>
       </div>
-      <div class="counter-card" id="card-replied" onclick="setFilter('replied')">
-        <div class="num num-replied" id="stat-replied">0</div>
-        <div class="label" id="lbl-replied">تم الرد</div>
+      <div class="stat-chip chip-all" id="card-all" onclick="setFilter('all')">
+        <div class="val" id="stat-total">0</div>
+        <div class="lbl" id="lbl-total">📋 الكل</div>
       </div>
     </div>
 
-    <!-- Progress Indicator -->
-    <div class="progress-wrap">
-      <div class="progress-bar" id="progress-bar"></div>
+    <!-- Progress Tracker -->
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-bar"></div>
     </div>
   </header>
 
-  <!-- Search & Filter Controls -->
+  <!-- Slim Search & City Filter Bar -->
   <section class="controls-bar">
-    <input type="text" class="search-box" id="search-input" placeholder="🔍 ابحث بالاسم أو رقم الهاتف..." oninput="handleSearch()">
-    
-    <div class="filter-pills">
-      <button class="pill-btn active" id="pill-priority" onclick="setFilter('priority')">⚡ غير المرسل أولاً</button>
-      <button class="pill-btn" id="pill-all" onclick="setFilter('all')">📋 الكل</button>
-      <button class="pill-btn" id="pill-unsent" onclick="setFilter('unsent')">⏳ لم يُرسل</button>
-      <button class="pill-btn" id="pill-sent" onclick="setFilter('sent')">✅ تم الإرسال</button>
-      <button class="pill-btn" id="pill-replied" onclick="setFilter('replied')">💬 تم الرد</button>
-      <select id="city-filter" class="pill-btn" style="padding: 4px 8px; outline: none;" onchange="handleCityFilter(this.value)">
-        <option value="all">📍 جميع المدن</option>
-        <option value="الرياض">الرياض</option>
-        <option value="جدة">جدة</option>
-        <option value="الدمام">الدمام</option>
-        <option value="الخبر">الخبر</option>
-        <option value="الطائف">الطائف</option>
-        <option value="مكة المكرمة">مكة المكرمة</option>
-      </select>
+    <div class="search-input-wrap">
+      <input type="text" class="search-input" id="search-input" placeholder="🔍 بحث بالاسم أو الهاتف..." oninput="handleSearch()">
+      <button type="button" class="btn-clear-search" id="btn-clear-search" onclick="clearSearch()">✕</button>
     </div>
+    <select id="city-filter" class="city-select" onchange="handleCityFilter(this.value)">
+      <option value="all">📍 جميع المدن</option>
+      <option value="الرياض">الرياض</option>
+      <option value="جدة">جدة</option>
+      <option value="الدمام">الدمام</option>
+      <option value="الخبر">الخبر</option>
+      <option value="الطائف">الطائف</option>
+      <option value="مكة المكرمة">مكة المكرمة</option>
+    </select>
   </section>
 
-  <!-- Leads List Container -->
+  <!-- Leads Feed -->
   <main class="leads-container" id="leads-list">
     <!-- Rendered dynamically -->
   </main>
 
+  <!-- Floating Scroll To Top -->
+  <button type="button" class="btn-fab-top" id="btn-fab-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">⬆️</button>
+
   <!-- Add New Lead Modal -->
   <div class="modal-overlay" id="add-modal" onclick="closeAddModal(event)">
-    <div class="modal-content" onclick="event.stopPropagation()">
-      <div class="modal-header">
-        <h3 class="modal-title" id="ui-modal-title">إضافة ليد جديدة (New Lead)</h3>
-        <button class="modal-close" onclick="closeAddModal()">&times;</button>
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3 id="ui-modal-title">إضافة ليد جديدة (New Lead)</h3>
+        <button class="modal-close-btn" onclick="closeAddModal()">&times;</button>
       </div>
 
       <form id="add-lead-form" onsubmit="handleFormSubmit(event)">
         <div class="form-group">
-          <label class="form-label" id="ui-lbl-modal-name">اسم المكتب / الشركة العقارية *</label>
-          <input type="text" class="form-input" id="new-name" placeholder="مثال: مكتب قمة الرياض للعقارات" required>
+          <label id="ui-lbl-modal-name">اسم المنشأة العقارية *</label>
+          <input type="text" class="form-ctrl" id="new-name" placeholder="مثال: مكتب قمة الرياض للعقارات" required>
         </div>
 
         <div class="form-group">
-          <label class="form-label" id="ui-lbl-modal-phone">رقم الجوال / الهاتف *</label>
-          <input type="tel" class="form-input" id="new-phone" placeholder="مثال: 0551234567 أو 966551234567" required>
+          <label id="ui-lbl-modal-phone">رقم الجوال *</label>
+          <input type="tel" class="form-ctrl" id="new-phone" placeholder="05XXXXXXXX" required>
         </div>
 
         <div class="form-group">
-          <label class="form-label" id="ui-lbl-modal-city">المدينة</label>
-          <select class="form-input" id="new-city">
+          <label id="ui-lbl-modal-city">المدينة</label>
+          <select class="form-ctrl" id="new-city">
             <option value="الرياض">الرياض</option>
             <option value="جدة">جدة</option>
             <option value="الدمام">الدمام</option>
@@ -803,46 +927,42 @@ const htmlTemplate = `<!DOCTYPE html>
         </div>
 
         <div class="form-group">
-          <label class="form-label" id="ui-lbl-modal-address">الحي / العنوان (اختياري)</label>
-          <input type="text" class="form-input" id="new-address" placeholder="مثال: حي الياسمين">
+          <label id="ui-lbl-modal-address">الحي / العنوان (اختياري)</label>
+          <input type="text" class="form-ctrl" id="new-address" placeholder="مثال: حي الياسمين">
         </div>
 
-        <button type="submit" class="btn-submit-lead" id="ui-btn-submit">💾 حفظ الليد وإضافتها للأعلى</button>
+        <button type="submit" class="btn-submit-lead" id="ui-btn-submit">💾 حفظ وإضافة للأعلى</button>
       </form>
     </div>
   </div>
 
   <!-- Toast Notification -->
-  <div class="toast" id="toast">تم النسخ بنجاح!</div>
+  <div class="toast-pill" id="toast">تم بنجاح!</div>
 
   <script>
     const initialLeads = LEADS_PLACEHOLDER;
 
-    const STORAGE_KEY = 'zargham_leads_v3';
+    const STORAGE_KEY = 'zargham_leads_v4';
     const LANG_STORAGE_KEY = 'zargham_crm_lang';
 
     let leadsData = [];
-    let currentFilter = 'priority';
+    let currentFilter = 'unsent'; // Default to Unsent for immediate outreach action!
     let searchQuery = '';
     let selectedCity = 'all';
     let currentLang = 'ar';
-    let leadMsgLangs = {}; // per-lead message language override
+    let leadMsgLangs = {};
+    let openDrawers = new Set();
 
     const i18n = {
       ar: {
-        brand: "⚡ ضرغام CRM",
-        brandTag: "Outreach Kit",
-        addLead: "➕ إضافة ليد",
-        totalLeads: "إجمالي الليڈز",
-        unsentLeads: "لم يُرسل (المتبقي)",
-        sentLeads: "تم الإرسال",
-        repliedLeads: "تم الرد",
-        searchPlaceholder: "🔍 ابحث بالاسم أو رقم الهاتف...",
-        filterPriority: "⚡ غير المرسل أولاً",
-        filterAll: "📋 الكل",
-        filterUnsent: "⏳ لم يُرسل",
-        filterSent: "✅ تم الإرسال",
-        filterReplied: "💬 تم الرد",
+        brand: "ضرغام CRM",
+        brandTag: "Outreach",
+        addLead: "➕ إضافة",
+        unsentLeads: "⚡ للمراسلة",
+        sentLeads: "✅ تم الإرسال",
+        repliedLeads: "💬 تم الرد",
+        totalLeads: "📋 الكل",
+        searchPlaceholder: "🔍 بحث بالاسم أو الهاتف...",
         allCities: "📍 جميع المدن",
         cities: {
           "الرياض": "الرياض",
@@ -853,42 +973,38 @@ const htmlTemplate = `<!DOCTYPE html>
           "مكة المكرمة": "مكة المكرمة",
           "أخرى": "أخرى"
         },
-        sendWa: "💬 إرسال واتساب (مجهّز)",
-        map: "🗺️ الخريطة",
-        pitchMsgHeader: "📝 نص الرسالة بالاسم:",
+        sendWa: "💬 واتساب ومارك تم الإرسال",
+        markSent: "✅ تم الإرسال",
+        markUnsent: "⏳ لم يُرسل",
+        pitchMsgHeader: "📝 نص الرسالة المجهّزة:",
         copy: "نسخ",
         copied: "تم النسخ بنجاح!",
         statusUnsent: "⏳ لم يُرسل",
         statusSent: "✅ تم الإرسال",
         statusReplied: "💬 تم الرد",
-        toastSent: "✅ تم التحديد: تم الإرسال",
+        toastSent: "✅ تم الإرسال بنجاح!",
         toastReplied: "💬 تم التحديد: تم الرد",
         toastUnsent: "⏳ تم التحديد: لم يُرسل",
         modalTitle: "إضافة ليد جديدة (New Lead)",
-        modalName: "اسم المكتب / الشركة العقارية *",
-        modalPhone: "رقم الجوال / الهاتف *",
+        modalName: "اسم المنشأة العقارية *",
+        modalPhone: "رقم الجوال *",
         modalCity: "المدينة",
         modalAddress: "الحي / العنوان (اختياري)",
-        modalSubmit: "💾 حفظ الليد وإضافتها للأعلى",
+        modalSubmit: "💾 حفظ وإضافة للأعلى",
         tagLicensed: "مرخص",
         tagNew: "⭐ جديد",
         emptyTitle: "لا توجد نتائج مطابقة",
         emptySubtitle: "جرّب تغيير خيارات البحث أو الفلتر."
       },
       en: {
-        brand: "⚡ Zargham CRM",
-        brandTag: "Outreach Kit",
-        addLead: "➕ Add Lead",
-        totalLeads: "Total Leads",
-        unsentLeads: "Unsent (Pending)",
-        sentLeads: "Sent",
-        repliedLeads: "Replied",
-        searchPlaceholder: "🔍 Search by business name or phone...",
-        filterPriority: "⚡ Unsent First",
-        filterAll: "📋 All",
-        filterUnsent: "⏳ Unsent",
-        filterSent: "✅ Sent",
-        filterReplied: "💬 Replied",
+        brand: "Zargham CRM",
+        brandTag: "Outreach",
+        addLead: "➕ Add",
+        unsentLeads: "⚡ To-Do",
+        sentLeads: "✅ Sent",
+        repliedLeads: "💬 Replied",
+        totalLeads: "📋 All",
+        searchPlaceholder: "🔍 Search name or phone...",
         allCities: "📍 All Cities",
         cities: {
           "الرياض": "Riyadh",
@@ -899,23 +1015,24 @@ const htmlTemplate = `<!DOCTYPE html>
           "مكة المكرمة": "Makkah",
           "أخرى": "Other"
         },
-        sendWa: "💬 Send WhatsApp (Ready)",
-        map: "🗺️ Map",
-        pitchMsgHeader: "📝 Pitch Message:",
+        sendWa: "💬 WhatsApp & Mark Sent",
+        markSent: "✅ Sent",
+        markUnsent: "⏳ Unsent",
+        pitchMsgHeader: "📝 Outreach Pitch Message:",
         copy: "Copy",
         copied: "Copied successfully!",
         statusUnsent: "⏳ Unsent",
         statusSent: "✅ Sent",
         statusReplied: "💬 Replied",
-        toastSent: "✅ Marked as: Sent",
-        toastReplied: "💬 Marked as: Replied",
-        toastUnsent: "⏳ Marked as: Unsent",
+        toastSent: "✅ Sent marked!",
+        toastReplied: "💬 Marked: Replied",
+        toastUnsent: "⏳ Marked: Unsent",
         modalTitle: "Add New Lead",
         modalName: "Business / Office Name *",
         modalPhone: "Mobile / Phone Number *",
         modalCity: "City",
         modalAddress: "Neighborhood / Address (Optional)",
-        modalSubmit: "💾 Save Lead to Top",
+        modalSubmit: "💾 Save to Top",
         tagLicensed: "Licensed",
         tagNew: "⭐ New",
         emptyTitle: "No matching leads found",
@@ -924,53 +1041,65 @@ const htmlTemplate = `<!DOCTYPE html>
     };
 
     function init() {
-      // Load saved language
       const savedLang = localStorage.getItem(LANG_STORAGE_KEY);
       if (savedLang === 'en' || savedLang === 'ar') {
         currentLang = savedLang;
       }
 
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
+      // CRITICAL: Preserve all 66 sent statuses that the user set on their phone!
+      const existingStored = localStorage.getItem('zargham_leads_v4') || 
+                             localStorage.getItem('zargham_leads_v3') || 
+                             localStorage.getItem('zargham_leads_v2') || 
+                             localStorage.getItem('zargham_leads');
+
+      if (existingStored) {
         try {
-          const parsed = JSON.parse(stored);
-          const existingPhones = new Set(parsed.map(l => formatWaNumber(l.phone || '')));
-          const newLeads = initialLeads.filter(l => !existingPhones.has(formatWaNumber(l.phone || '')));
-          if (newLeads.length > 0) {
-            leadsData = [...newLeads, ...parsed];
-          } else {
-            leadsData = parsed;
-          }
+          const parsed = JSON.parse(existingStored);
+          const userStatusMap = new Map();
+          parsed.forEach(l => {
+            if (l.phone) {
+              userStatusMap.set(formatWaNumber(l.phone), l.status);
+            }
+          });
+
+          // Build master list preserving user statuses
+          leadsData = initialLeads.map(initLead => {
+            const ph = formatWaNumber(initLead.phone);
+            const userStatus = userStatusMap.get(ph);
+            return {
+              ...initLead,
+              status: userStatus || initLead.status || 'unsent'
+            };
+          });
+
+          // Keep user-created custom leads
+          parsed.filter(l => l.is_user_added).forEach(uLead => {
+            if (!leadsData.some(l => formatWaNumber(l.phone) === formatWaNumber(uLead.phone))) {
+              leadsData.unshift(uLead);
+            }
+          });
+
+          saveToStorage();
         } catch(e) {
           leadsData = [...initialLeads];
+          saveToStorage();
         }
       } else {
-        // Also check if v2 had user added leads to migrate
-        const oldV2 = localStorage.getItem('zargham_leads_v2');
-        if (oldV2) {
-          try {
-            const parsedOld = JSON.parse(oldV2);
-            const userAdded = parsedOld.filter(l => l.is_user_added);
-            leadsData = [...userAdded, ...initialLeads];
-          } catch(e) {
-            leadsData = [...initialLeads];
-          }
-        } else {
-          leadsData = [...initialLeads];
-        }
+        leadsData = [...initialLeads];
+        saveToStorage();
       }
-
-      // Sync pre-marked sent leads from initial database
-      const sentInitialPhones = new Set(initialLeads.filter(l => l.status === 'sent').map(l => formatWaNumber(l.phone || '')));
-      leadsData.forEach(l => {
-        if (sentInitialPhones.has(formatWaNumber(l.phone || ''))) {
-          l.status = 'sent';
-        }
-      });
-      saveToStorage();
 
       applyLanguage();
       render();
+
+      window.addEventListener('scroll', () => {
+        const btn = document.getElementById('btn-fab-top');
+        if (window.scrollY > 300) {
+          btn.style.display = 'flex';
+        } else {
+          btn.style.display = 'none';
+        }
+      });
     }
 
     function setLanguage(lang) {
@@ -994,19 +1123,13 @@ const htmlTemplate = `<!DOCTYPE html>
       document.getElementById('ui-brand-tag').innerText = t.brandTag;
       document.getElementById('ui-add-lead').innerText = t.addLead;
 
-      document.getElementById('lbl-total').innerText = t.totalLeads;
       document.getElementById('lbl-unsent').innerText = t.unsentLeads;
       document.getElementById('lbl-sent').innerText = t.sentLeads;
       document.getElementById('lbl-replied').innerText = t.repliedLeads;
+      document.getElementById('lbl-total').innerText = t.totalLeads;
 
       document.getElementById('search-input').placeholder = t.searchPlaceholder;
-      document.getElementById('pill-priority').innerText = t.filterPriority;
-      document.getElementById('pill-all').innerText = t.filterAll;
-      document.getElementById('pill-unsent').innerText = t.filterUnsent;
-      document.getElementById('pill-sent').innerText = t.filterSent;
-      document.getElementById('pill-replied').innerText = t.filterReplied;
 
-      // Update City dropdown text
       const citySelect = document.getElementById('city-filter');
       citySelect.options[0].text = t.allCities;
       for (let i = 1; i < citySelect.options.length; i++) {
@@ -1016,7 +1139,6 @@ const htmlTemplate = `<!DOCTYPE html>
         }
       }
 
-      // Update Modal text
       document.getElementById('ui-modal-title').innerText = t.modalTitle;
       document.getElementById('ui-lbl-modal-name').innerText = t.modalName;
       document.getElementById('ui-lbl-modal-phone').innerText = t.modalPhone;
@@ -1037,33 +1159,32 @@ const htmlTemplate = `<!DOCTYPE html>
       localStorage.setItem(STORAGE_KEY, JSON.stringify(leadsData));
     }
 
-    function formatWaNumber(phone) {
-      let clean = phone.replace(/\\D/g, '');
-      if (clean.startsWith('05')) {
-        clean = '966' + clean.slice(1);
-      } else if (clean.startsWith('5') && clean.length === 9) {
-        clean = '966' + clean;
-      }
-      return clean;
-    }
-
-    // Zargham's Pitch in English
     function getMessageEn(lead) {
       const displayName = lead.english_name || lead.name;
       return "Hi " + displayName + ", I'm Zargham, a website developer.\\n\\nI came across your real estate company and wanted to introduce myself. I build professional websites that help real estate businesses showcase properties and make it easier for clients to enquire.\\n\\nWould you be open to seeing a quick example of my work?";
     }
 
-    // Zargham's Pitch in Arabic
     function getMessageAr(lead) {
-      return "مرحباً " + lead.name + "، أنا ضرغام، مطوّر ومصمم مواقع إلكترونية.\\n\\nاطّلعت على نشاطكم العقاري المميّز وحببت أن أقدّم نفسي. أعمل على تطوير وتصميم مواقع ويب احترافية تساعد المنشآت العقارية في عرض المشاريع والعقارات وتسهيل تواصل العملاء وتقديم الاستفسارات.\\n\\nهل يناسبكم الاطّلاع على نموذج سريع من أعمالي؟";
+      return "مرحباً " + lead.name + "، أنا ضرغام، مطوّر ومصمم مواقع إلكترونية.\\n\\nاطّلعت على نشاطكم العقاري المميّز وحببت أن أقدّم نفسي. أعمل على تطوير وتصميم مواقع ويب احترافية تساعد المنشآت العقارية في عرض المشاريع والعقارات وتسهيل تواصل واستفسارات العملاء.\\n\\nهل يناسبكم الاطّلاع على نموذج سريع من أعمالي؟";
     }
 
     function getLeadMessage(lead, lang) {
       return lang === 'en' ? getMessageEn(lead) : getMessageAr(lead);
     }
 
-    function setCardMsgLang(leadId, lang) {
+    function setCardMsgLang(leadId, lang, event) {
+      if (event) event.stopPropagation();
       leadMsgLangs[leadId] = lang;
+      render();
+    }
+
+    function toggleDrawer(leadId, event) {
+      if (event) event.stopPropagation();
+      if (openDrawers.has(leadId)) {
+        openDrawers.delete(leadId);
+      } else {
+        openDrawers.add(leadId);
+      }
       render();
     }
 
@@ -1084,19 +1205,23 @@ const htmlTemplate = `<!DOCTYPE html>
 
     function setFilter(filter) {
       currentFilter = filter;
-      document.querySelectorAll('.pill-btn').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = document.getElementById('pill-' + filter);
-      if (activeBtn) activeBtn.classList.add('active');
-
-      document.querySelectorAll('.counter-card').forEach(c => c.classList.remove('active'));
-      const activeCard = document.getElementById('card-' + filter);
-      if (activeCard) activeCard.classList.add('active');
-
+      document.querySelectorAll('.stat-chip').forEach(c => c.classList.remove('active'));
+      const activeChip = document.getElementById('card-' + filter);
+      if (activeChip) activeChip.classList.add('active');
       render();
     }
 
     function handleSearch() {
       searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+      const clearBtn = document.getElementById('btn-clear-search');
+      clearBtn.style.display = searchQuery ? 'flex' : 'none';
+      render();
+    }
+
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      searchQuery = '';
+      document.getElementById('btn-clear-search').style.display = 'none';
       render();
     }
 
@@ -1105,7 +1230,24 @@ const htmlTemplate = `<!DOCTYPE html>
       render();
     }
 
-    function setLeadStatus(leadId, newStatus) {
+    // Fast Action: Open WhatsApp AND Automatically Mark as Sent!
+    function handleWhatsAppClick(leadId, waUrl, event) {
+      // Mark as sent immediately
+      const lead = leadsData.find(l => l.id === leadId);
+      if (lead && lead.status !== 'sent') {
+        lead.status = 'sent';
+        saveToStorage();
+        updateStats();
+        // Give brief timeout before re-rendering so link opens smoothly
+        setTimeout(() => {
+          render();
+          showToast(i18n[currentLang].toastSent);
+        }, 300);
+      }
+    }
+
+    function setLeadStatus(leadId, newStatus, event) {
+      if (event) event.stopPropagation();
       const lead = leadsData.find(l => l.id === leadId);
       const t = i18n[currentLang];
       if (lead) {
@@ -1123,7 +1265,7 @@ const htmlTemplate = `<!DOCTYPE html>
     }
 
     function closeAddModal(e) {
-      if (!e || e.target.id === 'add-modal' || e.target.classList.contains('modal-close')) {
+      if (!e || e.target.id === 'add-modal' || e.target.classList.contains('modal-close-btn')) {
         document.getElementById('add-modal').style.display = 'none';
       }
     }
@@ -1149,7 +1291,7 @@ const htmlTemplate = `<!DOCTYPE html>
         category: 'مضاف يدوياً',
         license: 'جديد',
         maps_url: 'https://www.google.com/maps/search/' + encodeURIComponent(name + ' ' + city),
-        status: lead.status || 'unsent',
+        status: 'unsent',
         created_at: Date.now(),
         is_user_added: true
       };
@@ -1164,7 +1306,8 @@ const htmlTemplate = `<!DOCTYPE html>
       showToast(currentLang === 'en' ? '⭐ Lead added to top!' : '⭐ تم حفظ الليد بنجاح في الأعلى!');
     }
 
-    function copyMessage(elemId) {
+    function copyMessage(elemId, event) {
+      if (event) event.stopPropagation();
       const textElem = document.getElementById(elemId);
       if (!textElem) return;
 
@@ -1213,14 +1356,8 @@ const htmlTemplate = `<!DOCTYPE html>
         filtered = filtered.filter(l => (l.city || '').includes(selectedCity));
       }
 
-      // Priority Sorting: Unsent leads stay on top, Sent leads move below; New leads stay on top
-      if (currentFilter === 'priority') {
-        filtered.sort((a, b) => {
-          if (a.status === 'unsent' && b.status !== 'unsent') return -1;
-          if (a.status !== 'unsent' && b.status === 'unsent') return 1;
-          return (b.created_at || 0) - (a.created_at || 0);
-        });
-      } else if (currentFilter === 'unsent') {
+      // Filter by selected Chip
+      if (currentFilter === 'unsent') {
         filtered = filtered.filter(l => l.status === 'unsent');
         filtered.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
       } else if (currentFilter === 'sent') {
@@ -1230,7 +1367,12 @@ const htmlTemplate = `<!DOCTYPE html>
         filtered = filtered.filter(l => l.status === 'replied');
         filtered.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
       } else {
-        filtered.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+        // 'all': Priority sort (Unsent on top, Sent below)
+        filtered.sort((a, b) => {
+          if (a.status === 'unsent' && b.status !== 'unsent') return -1;
+          if (a.status !== 'unsent' && b.status === 'unsent') return 1;
+          return (b.created_at || 0) - (a.created_at || 0);
+        });
       }
 
       const listContainer = document.getElementById('leads-list');
@@ -1241,13 +1383,13 @@ const htmlTemplate = `<!DOCTYPE html>
 
       let html = '';
       filtered.forEach((lead, idx) => {
-        // Individual card language preference (defaults to global language)
         const cardLang = leadMsgLangs[lead.id] || currentLang;
         const msg = getLeadMessage(lead, cardLang);
         const encodedMsg = encodeURIComponent(msg);
         const waNumber = lead.wa_phone || formatWaNumber(lead.phone);
         const waLink = "https://wa.me/" + waNumber + "?text=" + encodedMsg;
         const textElemId = 'msg-txt-' + lead.id;
+        const isDrawerOpen = openDrawers.has(lead.id);
 
         const isUnsent = lead.status === 'unsent';
         const isSent = lead.status === 'sent';
@@ -1256,52 +1398,66 @@ const htmlTemplate = `<!DOCTYPE html>
         const cityDisplay = (t.cities && t.cities[lead.city]) ? t.cities[lead.city] : lead.city;
 
         html += '<article class="lead-card status-' + lead.status + '">';
-        html += '  <div class="card-top">';
-        html += '    <div>';
+        
+        // Card Top Bar
+        html += '  <div class="card-head">';
+        html += '    <div class="head-main">';
         html += '      <h3 class="biz-name">' + lead.name + '</h3>';
         if (lead.english_name) {
-          html += '    <div style="font-size: 11px; color: #64748b;">' + lead.english_name + '</div>';
+          html += '    <div class="biz-name-sub">' + lead.english_name + '</div>';
         }
         html += '    </div>';
-        html += '    <span style="font-size: 12px; font-weight: 800; color: #94a3b8;">#' + (idx + 1) + '</span>';
+        html += '    <span class="rank-pill">#' + (idx + 1) + '</span>';
         html += '  </div>';
 
-        html += '  <div class="biz-meta-tags">';
-        html += '    <span class="tag-badge tag-city">📍 ' + cityDisplay + '</span>';
-        html += '    <span class="tag-badge tag-license">' + (lead.license || t.tagLicensed) + '</span>';
+        // Meta tags
+        html += '  <div class="meta-row">';
+        html += '    <span class="badge-chip chip-city">📍 ' + cityDisplay + '</span>';
+        html += '    <span class="badge-chip chip-lic">' + (lead.license || t.tagLicensed) + '</span>';
         if (lead.is_user_added) {
-          html += '  <span class="tag-badge tag-new">' + t.tagNew + '</span>';
+          html += '  <span class="badge-chip chip-new">' + t.tagNew + '</span>';
         }
         html += '  </div>';
 
-        html += '  <div class="biz-address"><span>' + lead.address + '</span></div>';
+        // Contact info
+        html += '  <div class="address-text">';
+        html += '    <span>📞 ' + lead.phone + '</span>';
+        html += '    <span style="opacity:0.4;">•</span>';
+        html += '    <span>' + lead.address + '</span>';
+        html += '  </div>';
 
-        html += '  <div class="action-buttons">';
-        html += '    <a href="' + waLink + '" target="_blank" class="btn-wa-action" onclick="setLeadStatus(' + lead.id + ', \\'sent\\')">';
+        // Fast Action Bar (Thumb-optimized!)
+        html += '  <div class="fast-action-bar">';
+        html += '    <a href="' + waLink + '" target="_blank" class="btn-wa-main" onclick="handleWhatsAppClick(' + lead.id + ', \\'' + waLink + '\\', event)">';
         html += '      <span>' + t.sendWa + '</span>';
         html += '    </a>';
-        html += '    <a href="' + lead.maps_url + '" target="_blank" class="btn-map-action">' + t.map + '</a>';
+        html += '    <a href="tel:' + lead.phone.replace(/\\s+/g, '') + '" class="btn-icon-action" title="Call">📞</a>';
+        html += '    <a href="' + lead.maps_url + '" target="_blank" class="btn-icon-action" title="Google Maps">🗺️</a>';
+        html += '    <button type="button" class="btn-drawer-toggle ' + (isDrawerOpen ? 'expanded' : '') + '" onclick="toggleDrawer(' + lead.id + ', event)" title="View Pitch">📝</button>';
         html += '  </div>';
 
-        html += '  <div class="message-container">';
-        html += '    <div class="message-header">';
-        html += '      <span>' + t.pitchMsgHeader + '</span>';
-        html += '      <div style="display: flex; align-items: center; gap: 6px;">';
-        html += '        <div class="msg-pills">';
-        html += '          <button type="button" class="btn-msg-lang ' + (cardLang === 'ar' ? 'active' : '') + '" onclick="setCardMsgLang(' + lead.id + ', \\'ar\\')">🇸🇦 ع</button>';
-        html += '          <button type="button" class="btn-msg-lang ' + (cardLang === 'en' ? 'active' : '') + '" onclick="setCardMsgLang(' + lead.id + ', \\'en\\')">🇬🇧 EN</button>';
+        // Collapsible Pitch Drawer
+        html += '  <div class="pitch-drawer ' + (isDrawerOpen ? 'open' : '') + '" id="drawer-' + lead.id + '">';
+        html += '    <div class="pitch-top">';
+        html += '      <span class="pitch-title">' + t.pitchMsgHeader + '</span>';
+        html += '      <div style="display:flex; align-items:center; gap:4px;">';
+        html += '        <div class="pitch-switch">';
+        html += '          <button type="button" class="pitch-switch-btn ' + (cardLang === 'ar' ? 'active' : '') + '" onclick="setCardMsgLang(' + lead.id + ', \\'ar\\', event)">عربي</button>';
+        html += '          <button type="button" class="pitch-switch-btn ' + (cardLang === 'en' ? 'active' : '') + '" onclick="setCardMsgLang(' + lead.id + ', \\'en\\', event)">EN</button>';
         html += '        </div>';
-        html += '        <button type="button" class="btn-copy" onclick="copyMessage(\\'' + textElemId + '\\')">' + t.copy + '</button>';
+        html += '        <button type="button" class="btn-copy-mini" onclick="copyMessage(\\'' + textElemId + '\\', event)">' + t.copy + '</button>';
         html += '      </div>';
         html += '    </div>';
-        html += '    <div class="message-text ' + (cardLang === 'en' ? 'lang-en' : 'lang-ar') + '" id="' + textElemId + '">' + msg.replace(/\\n/g, '<br>') + '</div>';
+        html += '    <div class="pitch-text-box ' + (cardLang === 'en' ? 'lang-en' : 'lang-ar') + '" id="' + textElemId + '">' + msg.replace(/\\n/g, '<br>') + '</div>';
         html += '  </div>';
 
-        html += '  <div class="status-selector">';
-        html += '    <button type="button" class="status-tab ' + (isUnsent ? 'active-unsent' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'unsent\\')">' + t.statusUnsent + '</button>';
-        html += '    <button type="button" class="status-tab ' + (isSent ? 'active-sent' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'sent\\')">' + t.statusSent + '</button>';
-        html += '    <button type="button" class="status-tab ' + (isReplied ? 'active-replied' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'replied\\')">' + t.statusReplied + '</button>';
+        // Quick Status Tabs
+        html += '  <div class="status-bar">';
+        html += '    <button type="button" class="status-btn ' + (isUnsent ? 'active-unsent' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'unsent\\', event)">' + t.statusUnsent + '</button>';
+        html += '    <button type="button" class="status-btn ' + (isSent ? 'active-sent' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'sent\\', event)">' + t.statusSent + '</button>';
+        html += '    <button type="button" class="status-btn ' + (isReplied ? 'active-replied' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'replied\\', event)">' + t.statusReplied + '</button>';
         html += '  </div>';
+
         html += '</article>';
       });
 
