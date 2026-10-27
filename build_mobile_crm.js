@@ -951,6 +951,7 @@ const htmlTemplate = `<!DOCTYPE html>
             <option value="الخبر">الخبر</option>
             <option value="الطائف">الطائف</option>
             <option value="مكة المكرمة">مكة المكرمة</option>
+            <option value="المدينة المنورة">المدينة المنورة</option>
             <option value="أبها">أبها</option>
             <option value="أخرى">أخرى</option>
           </select>
@@ -982,11 +983,11 @@ const htmlTemplate = `<!DOCTYPE html>
       return clean;
     }
 
-    const STORAGE_KEY = 'zargham_leads_v4';
+    const STORAGE_KEY = 'zargham_leads_v5';
     const LANG_STORAGE_KEY = 'zargham_crm_lang';
 
     let leadsData = [];
-    let currentFilter = 'unsent'; // Default to Unsent for immediate outreach action!
+    let currentFilter = 'all'; // Default to All leads (Unsent on top, Sent moved to bottom)
     let searchQuery = '';
     let selectedCity = 'all';
     let currentLang = 'ar';
@@ -1012,6 +1013,7 @@ const htmlTemplate = `<!DOCTYPE html>
           "الطائف": "الطائف",
           "مكة المكرمة": "مكة المكرمة",
           "أبها": "أبها",
+          "المدينة المنورة": "المدينة المنورة",
           "أخرى": "أخرى"
         },
         sendWa: "💬 واتساب ومارك تم الإرسال",
@@ -1023,7 +1025,7 @@ const htmlTemplate = `<!DOCTYPE html>
         statusUnsent: "⏳ لم يُرسل",
         statusSent: "✅ تم الإرسال",
         statusReplied: "💬 تم الرد",
-        toastSent: "✅ تم الإرسال بنجاح!",
+        toastSent: "✅ تم الإرسال ونقل الرقم للأسفل!",
         toastReplied: "💬 تم التحديد: تم الرد",
         toastUnsent: "⏳ تم التحديد: لم يُرسل",
         modalTitle: "إضافة ليد جديدة (New Lead)",
@@ -1055,9 +1057,10 @@ const htmlTemplate = `<!DOCTYPE html>
           "الطائف": "Taif",
           "مكة المكرمة": "Makkah",
           "أبها": "Abha",
+          "المدينة المنورة": "Madinah",
           "أخرى": "Other"
         },
-        sendWa: "💬 WhatsApp & Mark Sent",
+        sendWa: "💬 WhatsApp & Move Down",
         markSent: "✅ Sent",
         markUnsent: "⏳ Unsent",
         pitchMsgHeader: "📝 Outreach Pitch Message:",
@@ -1066,7 +1069,7 @@ const htmlTemplate = `<!DOCTYPE html>
         statusUnsent: "⏳ Unsent",
         statusSent: "✅ Sent",
         statusReplied: "💬 Replied",
-        toastSent: "✅ Sent marked!",
+        toastSent: "✅ Sent marked & moved to bottom!",
         toastReplied: "💬 Marked: Replied",
         toastUnsent: "⏳ Marked: Unsent",
         modalTitle: "Add New Lead",
@@ -1092,10 +1095,11 @@ const htmlTemplate = `<!DOCTYPE html>
       } catch (e) {}
 
       // 2. Multi-Version Deep Recovery:
-      // Loop over all storage versions ('zargham_leads_v4', 'v3', 'v2', 'zargham_leads')
+      // Loop over all storage versions ('zargham_leads_v5', 'v4', 'v3', 'v2', 'zargham_leads')
       // If a lead was marked 'sent' or 'replied' in ANY version, NEVER revert it to 'unsent'!
       const userStatusMap = new Map();
-      const allStorageKeys = ['zargham_leads_v4', 'zargham_leads_v3', 'zargham_leads_v2', 'zargham_leads'];
+      const userSentAtMap = new Map();
+      const allStorageKeys = ['zargham_leads_v5', 'zargham_leads_v4', 'zargham_leads_v3', 'zargham_leads_v2', 'zargham_leads'];
 
       allStorageKeys.forEach(key => {
         try {
@@ -1108,6 +1112,9 @@ const htmlTemplate = `<!DOCTYPE html>
                   const ph = formatWaNumber(l.phone);
                   if (!userStatusMap.has(ph) || l.status === 'replied') {
                     userStatusMap.set(ph, l.status);
+                  }
+                  if (l.sent_at) {
+                    userSentAtMap.set(ph, l.sent_at);
                   }
                 }
               });
@@ -1122,9 +1129,11 @@ const htmlTemplate = `<!DOCTYPE html>
       leadsData = initialLeads.map(initLead => {
         const ph = formatWaNumber(initLead.phone);
         const recoveredStatus = userStatusMap.get(ph);
+        const recoveredSentAt = userSentAtMap.get(ph) || (recoveredStatus === 'sent' ? 1 : 0);
         return {
           ...initLead,
-          status: recoveredStatus || initLead.status || 'unsent'
+          status: recoveredStatus || initLead.status || 'unsent',
+          sent_at: recoveredSentAt
         };
       });
 
@@ -1292,16 +1301,43 @@ const htmlTemplate = `<!DOCTYPE html>
       render();
     }
 
-    // Fast Action: Open WhatsApp AND Automatically Mark as Sent!
+    // Fast Action: Open WhatsApp AND Automatically Mark as Sent & Move to Bottom!
     function handleWhatsAppClick(leadId, waUrl, event) {
       const lead = leadsData.find(l => l.id === leadId);
       if (lead) {
         lead.status = 'sent';
+        lead.sent_at = Date.now();
         saveToStorage();
         updateStats();
-        render();
+
+        // Immediate visual update on the card in DOM
+        const cardElem = document.querySelector('[data-card-id="' + leadId + '"]');
+        if (cardElem) {
+          cardElem.classList.remove('status-unsent');
+          cardElem.classList.add('status-sent');
+          const badge = cardElem.querySelector('.status-indicator-badge');
+          if (badge) {
+            badge.className = 'status-indicator-badge badge-sent';
+            badge.textContent = '✅ ' + i18n[currentLang].statusSent;
+          }
+          const sBtns = cardElem.querySelectorAll('.status-btn');
+          sBtns.forEach(btn => {
+            btn.classList.remove('active-unsent', 'active-sent', 'active-replied');
+            if (btn.classList.contains('btn-status-sent')) {
+              btn.classList.add('active-sent');
+            }
+          });
+          cardElem.style.transition = 'all 0.35s ease';
+          cardElem.style.opacity = '0.75';
+        }
+
         showToast(i18n[currentLang].toastSent);
       }
+
+      // Delay re-render so browser initiates WhatsApp opening cleanly, then moves card down!
+      setTimeout(function() {
+        render();
+      }, 400);
     }
 
     function setLeadStatus(leadId, newStatus, event) {
@@ -1310,6 +1346,9 @@ const htmlTemplate = `<!DOCTYPE html>
       const t = i18n[currentLang];
       if (lead) {
         lead.status = newStatus;
+        if (newStatus === 'sent') {
+          lead.sent_at = Date.now();
+        }
         saveToStorage();
         updateStats();
         render();
@@ -1420,15 +1459,23 @@ const htmlTemplate = `<!DOCTYPE html>
         filtered.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
       } else if (currentFilter === 'sent') {
         filtered = filtered.filter(l => l.status === 'sent');
-        filtered.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+        filtered.sort((a, b) => (b.sent_at || 0) - (a.sent_at || 0) || (b.created_at || 0) - (a.created_at || 0));
       } else if (currentFilter === 'replied') {
         filtered = filtered.filter(l => l.status === 'replied');
         filtered.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
       } else {
-        // 'all': Priority sort (Unsent on top, Sent below)
+        // 'all': Priority sort:
+        // 1. Unsent leads on top! (Rank 0)
+        // 2. Replied leads next! (Rank 1)
+        // 3. Sent leads strictly pushed DOWN to the bottom! (Rank 2)
         filtered.sort((a, b) => {
-          if (a.status === 'unsent' && b.status !== 'unsent') return -1;
-          if (a.status !== 'unsent' && b.status === 'unsent') return 1;
+          const rankA = a.status === 'unsent' ? 0 : (a.status === 'replied' ? 1 : 2);
+          const rankB = b.status === 'unsent' ? 0 : (b.status === 'replied' ? 1 : 2);
+          if (rankA !== rankB) return rankA - rankB;
+          if (rankA === 2) {
+            // Among sent leads, recently sent goes to bottom of sent list
+            return (a.sent_at || 0) - (b.sent_at || 0) || (b.created_at || 0) - (a.created_at || 0);
+          }
           return (b.created_at || 0) - (a.created_at || 0);
         });
       }
@@ -1455,7 +1502,7 @@ const htmlTemplate = `<!DOCTYPE html>
 
         const cityDisplay = (t.cities && t.cities[lead.city]) ? t.cities[lead.city] : lead.city;
 
-        html += '<article class="lead-card status-' + lead.status + '">';
+        html += '<article class="lead-card status-' + lead.status + '" data-card-id="' + lead.id + '">';
         
         // Card Top Bar
         html += '  <div class="card-head">';
@@ -1489,7 +1536,7 @@ const htmlTemplate = `<!DOCTYPE html>
 
         // Fast Action Bar (Thumb-optimized!)
         html += '  <div class="fast-action-bar">';
-        html += '    <a href="' + waLink + '" target="_blank" class="btn-wa-main" onclick="handleWhatsAppClick(' + lead.id + ', \\'' + waLink + '\\', event)">';
+        html += '    <a href="' + waLink + '" target="_blank" rel="noopener noreferrer" class="btn-wa-main" onclick="handleWhatsAppClick(' + lead.id + ', \\'' + waLink + '\\', event)">';
         html += '      <span>' + t.sendWa + '</span>';
         html += '    </a>';
         html += '    <a href="tel:' + lead.phone.replace(/\\s+/g, '') + '" class="btn-icon-action" title="Call">📞</a>';
@@ -1514,9 +1561,9 @@ const htmlTemplate = `<!DOCTYPE html>
 
         // Quick Status Tabs
         html += '  <div class="status-bar">';
-        html += '    <button type="button" class="status-btn ' + (isUnsent ? 'active-unsent' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'unsent\\', event)">' + t.statusUnsent + '</button>';
-        html += '    <button type="button" class="status-btn ' + (isSent ? 'active-sent' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'sent\\', event)">' + t.statusSent + '</button>';
-        html += '    <button type="button" class="status-btn ' + (isReplied ? 'active-replied' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'replied\\', event)">' + t.statusReplied + '</button>';
+        html += '    <button type="button" class="status-btn btn-status-unsent ' + (isUnsent ? 'active-unsent' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'unsent\\', event)">' + t.statusUnsent + '</button>';
+        html += '    <button type="button" class="status-btn btn-status-sent ' + (isSent ? 'active-sent' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'sent\\', event)">' + t.statusSent + '</button>';
+        html += '    <button type="button" class="status-btn btn-status-replied ' + (isReplied ? 'active-replied' : '') + '" onclick="setLeadStatus(' + lead.id + ', \\'replied\\', event)">' + t.statusReplied + '</button>';
         html += '  </div>';
 
         html += '</article>';
@@ -1526,6 +1573,17 @@ const htmlTemplate = `<!DOCTYPE html>
     }
 
     window.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible') {
+        render();
+      }
+    });
+    window.addEventListener('pageshow', function() {
+      render();
+    });
+    window.addEventListener('focus', function() {
+      render();
+    });
   </script>
 </body>
 </html>`;
